@@ -1,0 +1,31 @@
+#include <windows.h>
+
+1 ICON "@NR_ICON@"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION @NR_VERSION_COMMA@
+ PRODUCTVERSION @NR_VERSION_COMMA@
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "nullroute"
+            VALUE "FileDescription", "@NR_DESCRIPTION@"
+            VALUE "FileVersion", "@NR_VERSION@"
+            VALUE "InternalName", "@NR_INTERNAL@"
+            VALUE "OriginalFilename", "@NR_INTERNAL@.exe"
+            VALUE "ProductName", "nullroute"
+            VALUE "ProductVersion", "@NR_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

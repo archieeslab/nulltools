@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0a0c0b" />
+<title>nullroute</title>
+<style>
+  :root {
+    --bg: #0a0c0b;
+    --panel: #0e100f;
+    --line: #1c211e;
+    --line-soft: #161a18;
+    --text: #c2cbc4;
+    --heading: #e1e8e3;
+    --muted: #6b766f;
+    --faint: #5a645e;
+    --accent: #86b598;
+    --accent-dim: #4e6b59;
+    --warn: #c0a469;
+    --error: #bd7b7b;
+    --info: #7fa3ad;
+    --alt: #9c93b0;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "JetBrains Mono", "Cascadia Code", "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    overflow: hidden;
+  }
+  .app { height: 100%; display: flex; flex-direction: column; }
+  .bar {
+    height: 34px;
+    flex: 0 0 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    user-select: none;
+  }
+  .bar-left, .bar-right { display: flex; align-items: center; gap: 8px; }
+  .mark { width: 16px; height: 16px; object-fit: contain; opacity: 0.9; }
+  .brand { color: var(--heading); letter-spacing: 0.4px; }
+  .sep { color: var(--faint); }
+  .crumb { color: var(--muted); }
+  .tag {
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 0 5px;
+    font-size: 10px;
+    line-height: 15px;
+    border-radius: 2px;
+  }
+  .meta { color: var(--faint); }
+  .meta b { color: var(--muted); font-weight: 400; }
+  .statusdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    box-shadow: none;
+  }
+  .statusdot.busy { background: var(--warn); }
+  .statusdot.down { background: var(--error); }
+  #statusText { color: var(--muted); }
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 18px 8px 18px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    scrollbar-width: thin;
+    scrollbar-color: #242a26 transparent;
+  }
+  .screen::-webkit-scrollbar { width: 8px; }
+  .screen::-webkit-scrollbar-track { background: transparent; }
+  .screen::-webkit-scrollbar-thumb { background: #242a26; }
+  .line { min-height: 1.55em; }
+  .prompt { color: var(--accent); }
+  .dim { color: var(--muted); }
+  .grey { color: #8b958e; }
+  .dark { color: var(--faint); }
+  .cyan { color: var(--info); }
+  .amber { color: var(--warn); }
+  .red { color: var(--error); }
+  .purple { color: var(--alt); }
+  .ok { color: var(--accent); }
+  .banner { color: var(--heading); }
+  .inputline { display: flex; align-items: center; }
+  .inputline.hidden { visibility: hidden; }
+  .caret {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    margin-left: 2px;
+    background: var(--accent);
+    vertical-align: -2px;
+    animation: blink 1.1s steps(1, end) infinite;
+  }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  #hidden {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: transparent;
+    caret-color: transparent;
+    z-index: -1;
+  }
+  .status {
+    height: 24px;
+    flex: 0 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 0 14px;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    color: var(--faint);
+    user-select: none;
+  }
+  .status .spacer { flex: 1; }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 7, 6, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+  .overlay.hidden { display: none; }
+  .dialog {
+    width: 620px;
+    background: var(--panel);
+    border: 1px solid #262d29;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65);
+  }
+  .dialog-head {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dialog-head img { width: 15px; height: 15px; }
+  .dialog-head .title { color: var(--heading); }
+  .dialog-body {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 86px;
+    padding: 30px 26px;
+  }
+  .dialog-icon {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #2b332e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .dialog-text { display: flex; flex-direction: column; gap: 7px; }
+  .dialog-text b { font-weight: 500; color: var(--heading); font-size: 15px; letter-spacing: 0.2px; }
+  .dialog-text span { color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 18px 18px 18px;
+  }
+  .btn {
+    min-width: 104px;
+    padding: 7px 18px;
+    background: #141816;
+    border: 1px solid #313a34;
+    color: var(--heading);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent-dim); background: #171d19; }
+  .btn:active { background: #1b231e; }
+  ::selection { background: #2c3c33; color: #eef4f0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="bar-left">
+      <img src="/logo.png" class="mark" alt="" />
+      <span class="brand">nullroute</span>
+      <span class="sep">/</span>
+      <span class="crumb">console</span>
+      <span class="tag">v1.0.0</span>
+    </div>
+    <div class="bar-right">
+      <span class="meta">session <b id="session">--------</b></span>
+      <span class="statusdot" id="statusDot"></span>
+      <span id="statusText">connected</span>
+    </div>
+  </header>
+  <main class="screen" id="screen">
+    <div id="out"></div>
+    <div class="inputline hidden" id="inputline"><span class="prompt">nullroute:~#</span>&nbsp;<span id="typed"></span><span class="caret"></span></div>
+  </main>
+  <footer class="status">
+    <span>127.0.0.1</span>
+    <span>readonly</span>
+    <span>utf-8</span>
+    <span class="spacer"></span>
+    <span id="clock">--:--:--</span>
+  </footer>
+</div>
+<div class="overlay" id="overlay">
+  <div class="dialog">
+    <div class="dialog-head">
+      <img src="/logo.png" alt="" />
+      <span class="title">nullroute</span>
+      <span>setup</span>
+    </div>
+    <div class="dialog-body">
+      <div class="dialog-icon">i</div>
+      <div class="dialog-text">
+        <b id="msgText">Loading...</b>
+        <span id="msgNote">Starting the console service and reading settings.</span>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" id="msgBtn">NEXT</button>
+    </div>
+  </div>
+</div>
+<input id="hidden" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="terminal input" />
+<script>
+(function () {
+  "use strict";
+
+  var out = document.getElementById("out");
+  var screenEl = document.getElementById("screen");
+  var typedEl = document.getElementById("typed");
+  var inputEl = document.getElementById("hidden");
+  var inputline = document.getElementById("inputline");
+  var overlay = document.getElementById("overlay");
+  var msgText = document.getElementById("msgText");
+  var msgNote = document.getElementById("msgNote");
+  var msgBtn = document.getElementById("msgBtn");
+  var sessionEl = document.getElementById("session");
+  var statusText = document.getElementById("statusText");
+  var statusDot = document.getElementById("statusDot");
+  var clockEl = document.getElementById("clock");
+
+  var PROMPT = "nullroute:~#";
+  var TOKEN = new URLSearchParams(location.search).get("t") || "";
+  var busy = false;
+  var abort = false;
+  var hist = [];
+  var hIdx = 0;
+  var draft = "";
+
+  sessionEl.textContent = TOKEN ? TOKEN.slice(0, 8) : "local";
+
+  function tick() {
+    var d = new Date();
+    clockEl.textContent = [d.getHours(), d.getMinutes(), d.getSeconds()]
+      .map(function (n) { return String(n).padStart(2, "0"); })
+      .join(":");
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  function setStatus(text, mode) {
+    statusText.textContent = text;
+    statusDot.className = "statusdot" + (mode ? " " + mode : "");
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function pick(a) { return a[rnd(a.length)]; }
+  function randIP() { return pick([10, 172, 192]) + "." + rnd(256) + "." + rnd(256) + "." + (1 + rnd(254)); }
+  function randHex(n) {
+    var s = "", c = "0123456789abcdef";
+    for (var i = 0; i < n; i++) s += c[rnd(16)];
+    return s;
+  }
+  function scroll() { screenEl.scrollTop = screenEl.scrollHeight; }
+
+  function print(text, cls) {
+    var line = document.createElement("div");
+    line.className = "line" + (cls ? " " + cls : "");
+    line.textContent = text == null ? "" : text;
+    out.appendChild(line);
+    scroll();
+    return line;
+  }
+
+  function lineOf(parts) {
+    var line = document.createElement("div");
+    line.className = "line";
+    parts.forEach(function (p) {
+      if (p[1]) {
+        var s = document.createElement("span");
+        s.className = p[1];
+        s.textContent = p[0];
+        line.appendChild(s);
+      } else {
+        line.appendChild(document.createTextNode(p[0]));
+      }
+    });
+    out.appendChild(line);
+    scroll();
+    return line;
+  }
+
+  async function stream(text, cls, speed) {
+    var line = print("", cls);
+    speed = speed || 9;
+    for (var i = 0; i < text.length; i++) {
+      if (abort) { line.textContent += text.slice(i); break; }
+      line.textContent += text[i];
+      scroll();
+      if (text[i] !== " ") await sleep(speed);
+    }
+    return line;
+  }
+
+  async function progress(label, dur) {
+    var line = print("", "dim");
+    var w = 28;
+    var start = performance.now();
+    for (;;) {
+      var p = Math.min(1, (performance.now() - start) / dur);
+      var f = Math.round(p * w);
+      line.textContent = label + " [" + "\u2588".repeat(f) + "\u00b7".repeat(w - f) + "] " +
+        String(Math.round(p * 100)).padStart(3) + "%";
+      scroll();
+      if (p >= 1) break;
+      if (abort) {
+        line.className = "line red";
+        line.textContent += "  aborted";
+        return false;
+      }
+      await sleep(40);
+    }
+    return true;
+  }
+
+  async function api(cmd, args) {
+    var q = new URLSearchParams();
+    q.set("cmd", cmd);
+    (args || []).forEach(function (a) { q.append("arg", a); });
+    var res = await fetch("/api/run?" + q.toString(), {
+      headers: { "X-NR-Token": TOKEN }
+    });
+    return await res.text();
+  }
+
+  function paint(text) {
+    var lines = text.replace(/\r/g, "").split("\n");
+    while (lines.length && lines[lines.length - 1] === "") lines.pop();
+    lines.forEach(function (l) {
+      if (l.indexOf("[+]") === 0) print(l, "ok");
+      else if (l.indexOf("[!]") === 0) print(l, "amber");
+      else if (l.indexOf("[-]") === 0 || l.indexOf("error:") === 0) print(l, "red");
+      else if (l.trim() === "") print("");
+      else print(l);
+    });
+  }
+
+  async function runReal(cmd, args) {
+    setStatus("working", "busy");
+    try {
+      var text = await api(cmd, args);
+      if (!text) print("no output", "dim");
+      else paint(text);
+    } catch (e) {
+      print("error: local server unreachable", "red");
+      setStatus("disconnected", "down");
+      return;
+    }
+    setStatus("connected", "");
+  }
+
+  var MINI_ASCII = [
+    "  _   _  _   _  _      _      ____    ___   _   _  _____  _____",
+    "  | \\ | || | | || |    | |    |  _ \\  / _ \\ | | | ||_   _|| ____|",
+    "  |  \\| || | | || |    | |    | |_) || | | || | | |  | |  |  _|",
+    "  | |\\  || |_| || |___ | |___ |  _ < | |_| || |_| |  | |  | |___",
+    "  |_| \\_| \\___/ |_____||_____||_| \\_\\ \\___/  \\___/   |_|  |_____|"
+  ];
+
+  function miniAscii() {
+    MINI_ASCII.forEach(function (line) { print(line, "dark"); });
+    print("  reverse engineering console", "dim");
+    print("");
+  }
+
+  function cmdHelp() {
+    print("commands", "banner");
+    print("");
+    var rows = [
+      ["pe <file>", "parse pe headers, sections, entropy and imports"],
+      ["hash <file>", "sha256 and md5 of a file"],
+      ["strings <file>", "printable strings with file offsets"],
+      ["hex <file>", "hex dump, optional --offset --length --find"],
+      ["find <query>", "walk a directory by name or content"],
+      ["disasm [func]", "disassemble an x86-64 routine"],
+      ["decompile [func]", "reconstruct c from a routine"],
+      ["entropy [file]", "section entropy and packer heuristics"],
+      ["patch <addr> <hex>", "patch bytes in a loaded image"],
+      ["scan <host>", "port scan with service banners"],
+      ["hack <host>", "exploit chain, staged"],
+      ["trace <host>", "hop latency trace"],
+      ["clear", "clear the screen"],
+      ["about", "what this is"],
+      ["exit", "stop the local server"]
+    ];
+    rows.forEach(function (r) {
+      lineOf([["  " + r[0].padEnd(21), "grey"], [r[1], "dim"]]);
+    });
+    print("");
+    print("real tools read only what you point them at.", "dim");
+  }
+
+  async function cmdPe(args) {
+    if (!args[0]) { print("usage: pe <file>", "red"); return; }
+    await runReal("pe", args);
+  }
+
+  async function cmdHash(args) {
+    if (!args[0]) { print("usage: hash <file> [--md5]", "red"); return; }
+    await runReal("hash", args);
+  }
+
+  async function cmdStrings(args) {
+    if (!args[0]) { print("usage: strings <file> [--min n] [--grep term]", "red"); return; }
+    await runReal("strings", args);
+  }
+
+  async function cmdHex(args) {
+    if (!args[0]) { print("usage: hex <file> [--offset n] [--length n] [--find text]", "red"); return; }
+    await runReal("hex", args);
+  }
+
+  async function cmdFind(args) {
+    if (!args[0]) { print("usage: find <query> [--root dir] [--content] [--ext ext]", "red"); return; }
+    await runReal("find", args);
+  }
+
+  async function cmdDisasm(args) {
+    var fn = args[0] || "sub_140001040";
+    print("[*] disassembling " + fn + " (x86-64)", "cyan");
+    await sleep(220);
+    print("");
+    var rows = [
+      ["140001040", "48 83 ec 28", "sub", "rsp, 0x28", "prologue"],
+      ["140001044", "48 8d 0d 55 4f 00", "lea", "rcx, [rip+0x4f55]", "\"nullroute v1.0\""],
+      ["14000104b", "e8 60 03 00 00", "call", "1400013b0", "<puts>"],
+      ["140001050", "65 48 8b 04 25 60", "mov", "rax, gs:[0x60]", "peb"],
+      ["140001059", "0f b6 40 02", "movzx", "eax, [rax+2]", "being_debugged"],
+      ["14000105d", "85 c0", "test", "eax, eax", ""],
+      ["14000105f", "75 14", "jnz", "140001075", "<trap>"],
+      ["140001061", "48 8d 15 88 51 00", "lea", "rdx, [rip+0x5188]", "key"],
+      ["140001068", "e8 93 05 00 00", "call", "140001600", "<decrypt>"],
+      ["14000106d", "48 83 c4 28", "add", "rsp, 0x28", "epilogue"],
+      ["140001071", "c3", "ret", "", ""]
+    ];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      lineOf([
+        ["  " + r[0] + "  " + r[1].padEnd(20) + " ", "dim"],
+        [(r[2] + " " + r[3]).padEnd(28), "grey"],
+        [r[4], "dark"]
+      ]);
+      await sleep(45);
+    }
+    print("");
+    print("[+] 11 instructions, 2 basic blocks, guard check on entry", "dim");
+  }
+
+  async function cmdDecompile(args) {
+    var fn = args[0] || "sub_140001040";
+    print("[*] decompiling " + fn, "cyan");
+    await progress("rebuilding cfg", 620);
+    print("");
+    var code = [
+      "int64_t " + fn + "(void) {",
+      "  uint8_t buffer[64];",
+      "  PPEB peb = NtCurrentTeb()->ProcessEnvironmentBlock;",
+      "  if (peb->BeingDebugged) {",
+      "    trap();",
+      "    return -1;",
+      "  }",
+      "  puts(\"nullroute v1.0\");",
+      "  decrypt(buffer, &key);",
+      "  return 0;",
+      "}"
+    ];
+    code.forEach(function (l) {
+      if (l.indexOf("if") === 0 || l.indexOf("return") === 0 || l.indexOf("int64_t") === 0) {
+        print("  " + l, "purple");
+      } else {
+        print("  " + l, "grey");
+      }
+    });
+    print("");
+    print("[+] 3 types recovered, confidence 94%", "dim");
+  }
+
+  async function cmdEntropy(args) {
+    var target = args[0] || "payload.exe";
+    print("[*] shannon entropy per section: " + target, "cyan");
+    await sleep(200);
+    print("");
+    var blocks = [
+      [".text", 6.41, "code"],
+      [".rdata", 4.96, "strings"],
+      [".data", 2.69, "sparse"],
+      [".rsrc", 7.67, "icons and manifests"],
+      [".packed", 7.96, "high entropy, packed or encrypted"]
+    ];
+    blocks.forEach(function (b) {
+      var f = Math.round((b[1] / 8) * 24);
+      var bar = "[" + "\u2588".repeat(f) + "\u00b7".repeat(24 - f) + "]";
+      var hot = b[1] > 7.4;
+      lineOf([
+        ["  " + b[0].padEnd(10) + bar + " " + b[1].toFixed(2) + "  ", hot ? "red" : "dim"],
+        [b[2], hot ? "red" : "grey"]
+      ]);
+    });
+    print("");
+    print("[!] .packed above 7.9 bits per byte, unpack before analysis", "amber");
+  }
+
+  async function cmdPatch(args) {
+    if (args.length < 2) { print("usage: patch <addr> <hex>", "red"); return; }
+    print("[*] patching " + args[0], "cyan");
+    await sleep(200);
+    print("  before  75 14        jnz 0x140001075", "red");
+    print("  after   " + args[1].padEnd(12) + "nop sled", "ok");
+    print("[+] write committed to image, guard branch neutralized", "ok");
+  }
+
+  async function cmdScan(args) {
+    var target = args[0] || randIP();
+    await stream("starting scan on " + target + ", top 1000 ports", "dim", 5);
+    await progress("syn sweep", 1100);
+    if (abort) return;
+    print("PORT      STATE   SERVICE     VERSION");
+    var ports = [
+      ["22/tcp", "open", "ssh", "OpenSSH 8.9p1 Ubuntu 3ubuntu0.6"],
+      ["80/tcp", "open", "http", "nginx 1.24.0"],
+      ["443/tcp", "open", "https", "nginx 1.24.0"],
+      ["3306/tcp", "open", "mysql", "MySQL 8.0.34"],
+      ["8080/tcp", "open", "proxy", "Squid 5.7"]
+    ];
+    for (var i = 0; i < ports.length; i++) {
+      if (abort) return;
+      var p = ports[i];
+      print(p[0].padEnd(10) + p[1].padEnd(8) + p[2].padEnd(12) + p[3]);
+      await sleep(110);
+    }
+    print("");
+    print("[+] 5 open, 995 closed, 0 filtered", "ok");
+  }
+
+  async function cmdHack(args) {
+    var target = args[0] || randIP();
+    print("[*] staging chain against " + target, "cyan");
+    await progress("recon", 700);
+    await progress("payload", 900);
+    print("");
+    print("  uid=0(root) gid=0(root) groups=0(root)", "ok");
+    print("  session key " + randHex(24), "dim");
+    print("[+] shell established", "ok");
+  }
+
+  async function cmdTrace(args) {
+    var target = args[0] || randIP();
+    await stream("traceroute to " + target + ", 30 hops max", "dim", 5);
+    var hops = 6 + rnd(3);
+    for (var i = 1; i <= hops; i++) {
+      if (abort) return;
+      var host = pick(["edge", "core", "gw", "rtr", "isp"]) + (10 + rnd(90)) + ".net";
+      print(" " + String(i).padStart(2) + "  " + host.padEnd(26) + (Math.random() * 14 + 2).toFixed(2) + " ms");
+      await sleep(120);
+    }
+    print("[+] path stable, 0% loss", "ok");
+  }
+
+  function cmdClear() {
+    out.textContent = "";
+    miniAscii();
+  }
+
+  function cmdAbout() {
+    print("nullroute", "banner");
+    print("");
+    print("one executable, one loopback port, nothing leaves this machine.");
+    print("pe, hash, strings, hex and find are real and read-only.");
+    print("scan, trace and hack are generated locally.", "dim");
+  }
+
+  async function cmdExit() {
+    print("stopping local server", "dim");
+    await sleep(300);
+    try { await api("quit", []); } catch (e) {}
+    print("disconnected", "dim");
+    setStatus("stopped", "down");
+    inputline.classList.add("hidden");
+  }
+
+  var CMDS = {
+    help: cmdHelp,
+    pe: cmdPe,
+    hash: cmdHash,
+    strings: cmdStrings,
+    hex: cmdHex,
+    find: cmdFind,
+    disasm: cmdDisasm,
+    dis: cmdDisasm,
+    decompile: cmdDecompile,
+    dec: cmdDecompile,
+    entropy: cmdEntropy,
+    patch: cmdPatch,
+    scan: cmdScan,
+    nmap: cmdScan,
+    hack: cmdHack,
+    trace: cmdTrace,
+    clear: cmdClear,
+    cls: cmdClear,
+    about: cmdAbout,
+    exit: cmdExit
+  };
+
+  function echo(cmd) {
+    var line = document.createElement("div");
+    line.className = "line";
+    var p = document.createElement("span");
+    p.className = "prompt";
+    p.textContent = PROMPT + " ";
+    line.appendChild(p);
+    line.appendChild(document.createTextNode(cmd));
+    out.appendChild(line);
+    scroll();
+  }
+
+  async function run(raw) {
+    var cmd = raw.trim();
+    echo(raw);
+    if (!cmd) return;
+    hist.push(cmd);
+    if (hist.length > 100) hist.shift();
+    hIdx = hist.length;
+    draft = "";
+
+    var parts = cmd.split(/\s+/);
+    var name = parts[0].toLowerCase();
+    var args = parts.slice(1);
+
+    busy = true;
+    abort = false;
+    try {
+      if (CMDS[name]) await CMDS[name](args);
+      else if (name === "whoami") print("operator");
+      else if (name === "pwd") print("/root");
+      else {
+        print(name + ": command not found", "red");
+        print("type help for the list", "dim");
+      }
+    } catch (e) {
+      print("runtime error: " + e.message, "red");
+    } finally {
+      busy = false;
+      abort = false;
+    }
+  }
+
+  var steps = [
+    ["Loading...", "Starting the console service and reading settings."],
+    ["Unpacking...", "Preparing the bundled analysis tools."],
+    ["Nextup...", "Linking the command interface to the local engine."],
+    ["Opening...", "Listening on 127.0.0.1, waiting for the console."]
+  ];
+  var step = 0;
+
+  function showStep(i) {
+    if (i < steps.length) {
+      msgText.textContent = steps[i][0];
+      msgNote.textContent = steps[i][1];
+      msgBtn.textContent = "NEXT";
+      msgBtn.focus();
+      return;
+    }
+    overlay.classList.add("hidden");
+    out.textContent = "";
+    miniAscii();
+    print("engine ready", "ok");
+    print("type help to list commands", "dim");
+    print("");
+    inputline.classList.remove("hidden");
+    inputEl.focus();
+    api("ready", []).catch(function () {});
+  }
+
+  function advance() {
+    step += 1;
+    showStep(step);
+  }
+
+  msgBtn.addEventListener("click", advance);
+  document.addEventListener("keydown", function (e) {
+    if (!overlay.classList.contains("hidden") && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      advance();
+    }
+  });
+
+  function setTyped(v) { typedEl.textContent = v; }
+
+  function submit() {
+    var v = inputEl.value;
+    inputEl.value = "";
+    setTyped("");
+    run(v);
+  }
+
+  function navHist(dir) {
+    if (!hist.length) return;
+    if (hIdx === hist.length) draft = inputEl.value;
+    hIdx = Math.max(0, Math.min(hist.length, hIdx + dir));
+    var v = (hIdx === hist.length) ? draft : hist[hIdx];
+    inputEl.value = v;
+    setTyped(v);
+  }
+
+  var names = Object.keys(CMDS).sort();
+  function complete() {
+    var v = inputEl.value;
+    if (!v) return;
+    var m = names.filter(function (n) { return n.indexOf(v) === 0; });
+    if (m.length === 1) {
+      inputEl.value = m[0] + " ";
+      setTyped(inputEl.value);
+    }
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (!overlay.classList.contains("hidden")) return;
+    if (e.target !== inputEl) inputEl.focus();
+    if (e.ctrlKey && e.key.toLowerCase() === "c") {
+      if (busy) abort = true;
+      else { echo("^C"); inputEl.value = ""; setTyped(""); }
+      return;
+    }
+    if (e.key === "Enter") { submit(); return; }
+    if (e.key === "ArrowUp") { e.preventDefault(); navHist(-1); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); navHist(1); return; }
+    if (e.key === "Tab") { e.preventDefault(); complete(); return; }
+  });
+
+  inputEl.addEventListener("input", function () { setTyped(inputEl.value); });
+  screenEl.addEventListener("click", function () {
+    if (overlay.classList.contains("hidden")) inputEl.focus();
+  });
+
+  showStep(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="438" viewBox="0 0 820 438" role="img" aria-label="nrscan terminal output">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c110e"/>
+      <stop offset="1" stop-color="#080b09"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="819" height="437" rx="10" fill="url(#bg)" stroke="#1b241e"/>
+  <path d="M0.5 10.5a10 10 0 0 1 10-10h799a10 10 0 0 1 10 10V40H0.5z" fill="#101612"/>
+  <line x1="0.5" y1="40.5" x2="819.5" y2="40.5" stroke="#1b241e"/>
+  <circle cx="24" cy="21" r="5" fill="#ff5f57" opacity="0.85"/>
+  <circle cx="42" cy="21" r="5" fill="#febc2e" opacity="0.85"/>
+  <circle cx="60" cy="21" r="5" fill="#28c840" opacity="0.85"/>
+  <text x="410" y="25" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" font-size="11" fill="#5d6b63">nullroute — nrscan</text>
+
+  <g font-family="'JetBrains Mono', Consolas, 'Courier New', monospace" font-size="14.5" xml:space="preserve">
+    <text x="26" y="76" fill="#cfd8d2"><tspan fill="#5d6b63">$ </tspan>nrscan 10.0.0.14</text>
+
+    <text x="26" y="120" fill="#cfd8d2"><tspan fill="#6b7b72">  target    </tspan>10.0.0.14</text>
+    <text x="26" y="142" fill="#cfd8d2"><tspan fill="#6b7b72">  reverse   </tspan>edge-07.internal</text>
+    <text x="26" y="164" fill="#cfd8d2"><tspan fill="#6b7b72">  profile   </tspan>syn - top 1000</text>
+
+    <text x="26" y="208" fill="#6b7b72">  port    state       service          version</text>
+    <text x="26" y="230" fill="#cfd8d2">  22      <tspan fill="#8be0a8">open</tspan>        ssh              OpenSSH 8.9p1</text>
+    <text x="26" y="252" fill="#cfd8d2">  80      <tspan fill="#8be0a8">open</tspan>        http             nginx 1.24.0</text>
+    <text x="26" y="274" fill="#cfd8d2">  443     <tspan fill="#8be0a8">open</tspan>        https            nginx 1.24.0</text>
+    <text x="26" y="296" fill="#cfd8d2">  3306    <tspan fill="#8be0a8">open</tspan>        mysql            MySQL 8.0.34</text>
+    <text x="26" y="318" fill="#cfd8d2">  8080    <tspan fill="#8be0a8">open</tspan>        http-proxy       Squid 5.7</text>
+    <text x="26" y="340" fill="#cfd8d2">  9001    <tspan fill="#8be0a8">open</tspan>        tor-orport       Tor 0.4.8.10</text>
+
+    <text x="26" y="384" fill="#6b7b72">  6 open - 993 closed - 1 filtered - 0.86s</text>
+
+    <text x="26" y="416" fill="#cfd8d2"><tspan fill="#5d6b63">$ </tspan><tspan fill="#8be0a8" filter="url(#glow)">_</tspan></text>
+  </g>
+</svg>
